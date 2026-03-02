@@ -15,13 +15,13 @@ Features:
 
 Usage:
     # Run optimization with 50 trials
-    python train_mlp.py --features ml_features/features_3000samples_3models.csv --trials 50
+    python train_mlp.py --features features/features_3000samples_3models.csv --trials 50
     
     # Quick test with 10 trials
-    python train_mlp.py --features ml_features/features_*.csv --trials 10 --timeout 600
+    python train_mlp.py --features features/features_*.csv --trials 10 --timeout 600
     
     # Use specific hyperparameters (no optimization)
-    python train_mlp.py --features ml_features/features_*.csv --no-optimize
+    python train_mlp.py --features features/features_*.csv --no-optimize
 """
 
 import os

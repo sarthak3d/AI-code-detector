@@ -433,10 +433,10 @@ def generate_hf(model, tokenizer, model_device, model_name, prompts, solutions, 
 
 
 # Supported languages (same as download_dataset.py)
-SUPPORTED_LANGUAGES = ['ruby', 'php', 'go', 'cpp', 'python', 'c_sharp', 'c', 'rust']#['javascript', 'java', 'ruby', 'php', 'go', 'cpp', 'python', 'c_sharp', 'c', 'rust']
+SUPPORTED_LANGUAGES = ['python', 'javascript', 'java', 'c', 'cpp', 'go', 'rust', 'ruby', 'php', 'c_sharp']
 
 
-def generate_for_language(model, tokenizer, model_device, path, language, model_name, max_num, temperature, batch_size, max_length):
+def generate_for_language(model, tokenizer, model_device, path, language, model_name, max_num, temperature, batch_size, max_length, output_base_dir="dataset_ai"):
     """Generate code for a single language using pre-loaded model."""
     logger.info(f'\n{"="*60}')
     logger.info(f'Processing language: {language}')
@@ -463,8 +463,7 @@ def generate_for_language(model, tokenizer, model_device, path, language, model_
     logger.info(f'Generated {len(outputs)} outputs for {language}')
     
     # Create output directory
-    save_prefix = f'output/{path.split("/")[-1]}'
-    output_dir = f'{save_prefix}/{model_short_name}-{max_num}-tp{temperature}/{language}'
+    output_dir = os.path.join(output_base_dir, language)
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -524,7 +523,7 @@ Examples:
   # Generate for specific languages
   python generate.py --path ../dataset --language python,java,javascript --model_name Salesforce/codegen-350M-mono
 
-Supported languages: javascript, java, ruby, php, go, cpp, python, c_sharp, c, rust
+Supported languages: python, javascript, java, c, cpp, go, rust, ruby, php, c_sharp
 """
     )
     parser.add_argument('--path', type=str, default="../dataset",
@@ -541,6 +540,8 @@ Supported languages: javascript, java, ruby, php, go, cpp, python, c_sharp, c, r
                         help='Batch size for generation')
     parser.add_argument('--max_length', type=int, default=128,
                         help='Maximum generation length')
+    parser.add_argument('--output_dir', type=str, default='dataset_ai',
+                        help='Base output directory for generated outputs')
     args = parser.parse_args()
 
     logger.info(f'Arguments: {args}')
@@ -577,7 +578,8 @@ Supported languages: javascript, java, ruby, php, go, cpp, python, c_sharp, c, r
                 max_num=args.max_num,
                 temperature=args.temperature,
                 batch_size=args.batch_size,
-                max_length=args.max_length
+                max_length=args.max_length,
+                output_base_dir=args.output_dir
             )
             if result:
                 results_summary.append(result)

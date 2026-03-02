@@ -37,65 +37,49 @@ pip install -r requirements.txt
 
 ### Data Preparation
 
-To prepare the datasets used in our study:
+To prepare the datasets used in our study, you will first download human-written code and then generate AI counterparts for comparison.
 
-1. Navigate to the `code-generation` directory.
-2. Obtain datasets from either:
-   - [CodeSearchNet](https://github.com/github/CodeSearchNet)
-   - [Preprocessed version of The Stack (The Vault)](https://github.com/FSoft-AI4Code/TheVault)
-3. Update the data paths and model specifications in `generate.py` to reflect your local setup.
-4. Execute the data generation script:
+1. **Download Human Dataset**
+   Navigate to the `download-dataset` directory and download the required dataset (e.g., from The Vault). We recommend standardizing inside the `dataset_human` folder.
 
    ```bash
-   python generate.py
+   python download-dataset/download_dataset.py dataset_human --set function
+   ```
+
+2. **Generate AI Code Dataset**
+   Navigate to the `code-generation` directory. This script uses the downloaded human dataset prompts to generate corresponding AI code.
+
+   ```bash
+   python code-generation/generate.py --path dataset_human --language all --output_dir dataset_ai
    ```
 
 ## Usage
 
-### Conducting the Empirical Study
+### Generating Features
 
-> **Note**: You can skip the empirical study if you are only interested in detecting machine-generated code with DetectCodeGPT.
+Extract advanced statistical and curvature-based features from the code to distinguish human vs AI written files:
 
-After data preparation, you can proceed to the empirical analysis:
-
-1. Navigate to the `code-analysis` directory.
-2. Analyze code length:
+1. Navigate to the `generate-features` directory.
+2. Run the feature generation script on the prepared datasets.
 
    ```bash
-   python analyze_length.py
+   python generate-features/generate_features.py --samples 500 --models all --device cuda
    ```
 
-3. Verify Zipf's and Heaps' laws, and compute token frequencies:
+   This will extract a CSV dataset of numerical features to the `features/` directory.
+
+### Training the MLP Detection Model
+
+To evaluate the AI code detection capability, train a Multi-Layer Perceptron (MLP) on the generated features:
+
+1. Navigate to the `training` directory.
+2. Run the Optuna hyperparameter optimization script on the saved features.
 
    ```bash
-   python analyze_law_and_frequency.py
+   python training/train_mlp.py --features "features/*.csv" --trials 50
    ```
 
-4. Analyze the proportion of different token categories:
-
-   ```bash
-   python analyze_proportion.py
-   ```
-
-5. Study the naturalness of code snippets:
-
-   ```bash
-   python analyze_naturalness.py
-   ```
-
-### Using DetectCodeGPT
-
-To evaluate our DetectCodeGPT model:
-
-1. Navigate to the `code-detection` directory.
-2. Configure `main.py` with the appropriate model and dataset paths.
-3. Run the model evaluation script:
-
-   ```bash
-   python main.py
-   ```
-
-> **Note**: If you are using your custom model to generate code, please update `'base_model_name': "codellama/CodeLlama-7b-hf"` in `main.py` to your model name during the detection stage.
+   This will search for the best model architecture and parameters to maximize F1 detection score and output the final model weights to `dl_models/`.
 
 ## Acknowledgements
 

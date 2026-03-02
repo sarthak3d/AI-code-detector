@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Usage:
     download_dataset.py DESTINATION_DIR --set SET_NAME
@@ -42,8 +41,9 @@ if __name__ == '__main__':
         set_name = ['function', 'class', 'inline']
     else:
         set_name = [args.set]
-        
-    for language in ('python', 'c_sharp', 'c', 'rust'):#('javascript', 'java', 'ruby', 'php', 'go', 'cpp', 'python', 'c_sharp', 'c', 'rust'):
+    LANGUAGES = ['python', 'javascript', 'java', 'c', 'cpp', 'go', 'rust', 'ruby', 'php', 'c_sharp']
+    
+    for language in LANGUAGES:
         for _name in set_name:
             url = f"https://ai4code.blob.core.windows.net/thevault/v1/{_name}/{language}.zip"
             output_path = os.path.join(destination_dir, f"{language}.zip")

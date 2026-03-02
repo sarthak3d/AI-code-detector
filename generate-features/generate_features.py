@@ -55,7 +55,6 @@ EXTENDED_MODELS = {
         "category": "small",
         "has_safetensors": False  # Uses pytorch_model.bin
     },
-    # Note: codet5p-220m removed - it's T5 encoder-decoder, not compatible with AutoModelForCausalLM
     
     # =========================================================================
     # MEDIUM MODELS (2-8GB VRAM)
@@ -222,12 +221,12 @@ MODEL_CATEGORIES = {
 # ============================================================================
 # Configuration
 # ============================================================================
-DATASET_AI_PATH = Path("dataset_ai/gpt-oss-20b-500-tp0.2")
+DATASET_AI_PATH = Path("dataset_ai")
 DATASET_HUMAN_PATH = Path("dataset_human")
-OUTPUT_DIR = Path("ml_features")
+OUTPUT_DIR = Path("features")
 
 LANGUAGES = ['python', 'javascript', 'java', 'c', 'cpp', 'go', 'rust', 'ruby', 'php', 'c_sharp']
-METHODS = ['npr', 'lrr', 'logrank', 'entropy', 'likelihood']
+METHODS = ['npr', 'lrr', 'logrank', 'entropy', 'likelihood', 'detectgpt', 't5npr', 'idnpr']
 
 # Language encoding for ML
 LANGUAGE_ENCODING = {lang: idx for idx, lang in enumerate(LANGUAGES)}
@@ -821,7 +820,7 @@ def load_balanced_dataset(samples_per_language: int = 500, languages: list = Non
 # Feature Generation
 # ============================================================================
 def extract_features_extended(detector: ExtendedDetector, code: str, model_alias: str, 
-                               language: str = 'python', include_advanced: bool = True) -> dict:
+                               language: str = 'python') -> dict:
     """Extract all method scores for a single code sample.
     
     Methods extracted:
@@ -883,47 +882,45 @@ def extract_features_extended(detector: ExtendedDetector, code: str, model_alias
         features[f'{model_alias}_likelihood_score'] = 0.0
         features[f'{model_alias}_likelihood_prediction'] = 0
     
-    # Advanced methods (optional - slower but more comprehensive)
-    if include_advanced:
-        # 6. DetectGPT (Curvature-based)
-        try:
-            detectgpt = detector.detect_detectgpt(code)
-            features[f'{model_alias}_detectgpt_score'] = detectgpt['score']
-            features[f'{model_alias}_detectgpt_prediction'] = detectgpt['prediction']
-            features[f'{model_alias}_detectgpt_curvature'] = detectgpt['curvature']
-        except Exception:
-            features[f'{model_alias}_detectgpt_score'] = 0.0
-            features[f'{model_alias}_detectgpt_prediction'] = 0
-            features[f'{model_alias}_detectgpt_curvature'] = 0.0
-        
-        # 7. T5-NPR (T5 Mask-Fill perturbation)
-        try:
-            t5_npr = detector.detect_t5_npr(code)
-            features[f'{model_alias}_t5npr_score'] = t5_npr['score']
-            features[f'{model_alias}_t5npr_prediction'] = t5_npr['prediction']
-            features[f'{model_alias}_t5npr_raw'] = t5_npr['raw']
-        except Exception:
-            features[f'{model_alias}_t5npr_score'] = 0.5
-            features[f'{model_alias}_t5npr_prediction'] = 0
-            features[f'{model_alias}_t5npr_raw'] = 1.0
-        
-        # 8. Identifier-NPR (Identifier masking perturbation)
-        try:
-            id_npr = detector.detect_identifier_npr(code, language)
-            features[f'{model_alias}_idnpr_score'] = id_npr['score']
-            features[f'{model_alias}_idnpr_prediction'] = id_npr['prediction']
-            features[f'{model_alias}_idnpr_raw'] = id_npr['raw']
-        except Exception:
-            features[f'{model_alias}_idnpr_score'] = 0.5
-            features[f'{model_alias}_idnpr_prediction'] = 0
-            features[f'{model_alias}_idnpr_raw'] = 1.0
+    # Advanced methods
+    # 6. DetectGPT (Curvature-based)
+    try:
+        detectgpt = detector.detect_detectgpt(code)
+        features[f'{model_alias}_detectgpt_score'] = detectgpt['score']
+        features[f'{model_alias}_detectgpt_prediction'] = detectgpt['prediction']
+        features[f'{model_alias}_detectgpt_curvature'] = detectgpt['curvature']
+    except Exception:
+        features[f'{model_alias}_detectgpt_score'] = 0.0
+        features[f'{model_alias}_detectgpt_prediction'] = 0
+        features[f'{model_alias}_detectgpt_curvature'] = 0.0
+    
+    # 7. T5-NPR (T5 Mask-Fill perturbation)
+    try:
+        t5_npr = detector.detect_t5_npr(code)
+        features[f'{model_alias}_t5npr_score'] = t5_npr['score']
+        features[f'{model_alias}_t5npr_prediction'] = t5_npr['prediction']
+        features[f'{model_alias}_t5npr_raw'] = t5_npr['raw']
+    except Exception:
+        features[f'{model_alias}_t5npr_score'] = 0.5
+        features[f'{model_alias}_t5npr_prediction'] = 0
+        features[f'{model_alias}_t5npr_raw'] = 1.0
+    
+    # 8. Identifier-NPR (Identifier masking perturbation)
+    try:
+        id_npr = detector.detect_identifier_npr(code, language)
+        features[f'{model_alias}_idnpr_score'] = id_npr['score']
+        features[f'{model_alias}_idnpr_prediction'] = id_npr['prediction']
+        features[f'{model_alias}_idnpr_raw'] = id_npr['raw']
+    except Exception:
+        features[f'{model_alias}_idnpr_score'] = 0.5
+        features[f'{model_alias}_idnpr_prediction'] = 0
+        features[f'{model_alias}_idnpr_raw'] = 1.0
     
     return features
 
 def generate_feature_dataset(samples: list, model_aliases: list, 
                               n_perturbations: int = 5,
-                              device: str = "cuda",
-                              include_advanced: bool = True) -> pd.DataFrame:
+                              device: str = "cuda") -> pd.DataFrame:
     """Generate feature dataset for all samples across all models.
     
     Args:
@@ -931,13 +928,10 @@ def generate_feature_dataset(samples: list, model_aliases: list,
         model_aliases: List of model aliases to use
         n_perturbations: Number of perturbations for NPR methods
         device: Device to run on
-        include_advanced: If True, include DetectGPT, T5-NPR, and Identifier-NPR
     """
     
     # Define all possible methods for placeholder features
-    base_methods = ['npr', 'lrr', 'logrank', 'entropy', 'likelihood']
-    advanced_methods = ['detectgpt', 't5npr', 'idnpr']
-    all_methods = base_methods + (advanced_methods if include_advanced else [])
+    all_methods = ['npr', 'lrr', 'logrank', 'entropy', 'likelihood', 'detectgpt', 't5npr', 'idnpr']
     
     # Initialize feature list with sample metadata
     all_features = []
@@ -959,7 +953,6 @@ def generate_feature_dataset(samples: list, model_aliases: list,
         print(f"  Name: {model_info.get('name', model_alias)}")
         print(f"  VRAM: {model_info.get('vram', 'Unknown')}")
         print(f"  Quantization: {model_info.get('quantization', 'None')}")
-        print(f"  Advanced methods: {'Yes' if include_advanced else 'No'}")
         print(f"{'=' * 60}")
         
         try:
@@ -980,8 +973,7 @@ def generate_feature_dataset(samples: list, model_aliases: list,
                     detector, 
                     sample['code'], 
                     model_alias,
-                    language=sample['language'],
-                    include_advanced=include_advanced
+                    language=sample['language']
                 )
                 all_features[idx].update(model_features)
             except Exception as e:
@@ -1036,10 +1028,6 @@ def main():
                         help='Generate full 10,000 sample dataset')
     parser.add_argument('--list-models', action='store_true',
                         help='List all available models and exit')
-    parser.add_argument('--advanced', action='store_true', default=True,
-                        help='Include advanced methods: DetectGPT, T5-NPR, Identifier-NPR (default: True)')
-    parser.add_argument('--no-advanced', action='store_true',
-                        help='Disable advanced methods for faster processing')
     
     args = parser.parse_args()
     
@@ -1095,10 +1083,6 @@ def main():
     print(f"  Device: {args.device}")
     print(f"  Output: {output_path}")
     
-    # Handle advanced flag
-    include_advanced = args.advanced and not args.no_advanced
-    print(f"  Advanced Methods: {'Yes (DetectGPT, T5-NPR, ID-NPR)' if include_advanced else 'No (basic only)'}")
-    
     # Show VRAM requirements
     print(f"\nVRAM Requirements:")
     total_vram = 0
@@ -1125,8 +1109,7 @@ def main():
         samples, 
         model_aliases, 
         n_perturbations=args.perturbations,
-        device=args.device,
-        include_advanced=include_advanced
+        device=args.device
     )
     
     # Save to CSV
