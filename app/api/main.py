@@ -14,10 +14,6 @@ class EvaluateRequest(BaseModel):
     code: str = Field(..., min_length=1, description="Source code to evaluate.")
     language: Optional[str] = Field(None, description="Programming language. Optional if filename is provided.")
     filename: Optional[str] = Field(None, description="Optional filename used for language inference by extension.")
-    include_advanced: Optional[bool] = Field(
-        None,
-        description="Enable advanced features (DetectGPT, T5-NPR, Identifier-NPR). If omitted, service default is used.",
-    )
 
 
 @asynccontextmanager
@@ -31,7 +27,6 @@ async def lifespan(app: FastAPI):
         if alias.strip()
     ]
 
-    include_advanced = os.getenv("INCLUDE_ADVANCED_FEATURES", "true").strip().lower() in {"1", "true", "yes", "on"}
     perturbations = int(os.getenv("DETECTOR_PERTURBATIONS", "5"))
     model_path = os.getenv("MLP_MODEL_PATH")
     threshold_env = os.getenv("MLP_THRESHOLD")
@@ -40,7 +35,6 @@ async def lifespan(app: FastAPI):
     app.state.service = await AICodeDetectionService.create(
         detector_aliases=detector_aliases,
         n_perturbations=perturbations,
-        include_advanced=include_advanced,
         model_path=model_path,
         threshold=threshold,
     )
@@ -86,7 +80,7 @@ async def evaluate_code(request: EvaluateRequest) -> dict:
     language = normalize_language(request.language, request.filename)
 
     try:
-        result = await service.evaluate(request.code, language, request.include_advanced)
+        result = await service.evaluate(request.code, language)
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Inference failed: {exc}") from exc

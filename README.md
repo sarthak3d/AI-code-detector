@@ -318,7 +318,6 @@ curl -X POST http://localhost:8000/evaluate \
 |---|---|---|
 | `MLP_MODEL_PATH` | — | Path to the trained `.pkl` model file |
 | `DETECTOR_MODELS` | `deepseek-1.3b` | Comma-separated detector model aliases |
-| `INCLUDE_ADVANCED_FEATURES` | `true` | Enable DetectGPT, T5-NPR, ID-NPR methods |
 | `DETECTOR_PERTURBATIONS` | `5` | Number of perturbations per sample |
 | `MLP_THRESHOLD` | auto | Override the AI/human classification threshold |
 

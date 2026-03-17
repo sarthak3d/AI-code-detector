@@ -661,7 +661,7 @@ class DetectorModel:
         prediction = 1 if npr_score < 1.40 else 0
         return {"score": normalized_score, "prediction": prediction, "raw": npr_score, "error": False}
 
-    async def extract_features(self, code: str, language: str, include_advanced: bool = True) -> Dict[str, float]:
+    async def extract_features(self, code: str, language: str) -> Dict[str, float]:
         features: Dict[str, float] = {}
         alias = self.alias
 
@@ -686,21 +686,20 @@ class DetectorModel:
         features[f"{alias}_likelihood_score"] = float(ll["score"])
         features[f"{alias}_likelihood_prediction"] = float(ll["prediction"])
 
-        if include_advanced:
-            detectgpt = await self.detect_detectgpt(code)
-            features[f"{alias}_detectgpt_score"] = float(detectgpt["score"])
-            features[f"{alias}_detectgpt_prediction"] = float(detectgpt["prediction"])
-            features[f"{alias}_detectgpt_curvature"] = float(detectgpt["curvature"])
+        detectgpt = await self.detect_detectgpt(code)
+        features[f"{alias}_detectgpt_score"] = float(detectgpt["score"])
+        features[f"{alias}_detectgpt_prediction"] = float(detectgpt["prediction"])
+        features[f"{alias}_detectgpt_curvature"] = float(detectgpt["curvature"])
 
-            t5_npr = await self.detect_t5_npr(code)
-            features[f"{alias}_t5npr_score"] = float(t5_npr["score"])
-            features[f"{alias}_t5npr_prediction"] = float(t5_npr["prediction"])
-            features[f"{alias}_t5npr_raw"] = float(t5_npr["raw"])
+        t5_npr = await self.detect_t5_npr(code)
+        features[f"{alias}_t5npr_score"] = float(t5_npr["score"])
+        features[f"{alias}_t5npr_prediction"] = float(t5_npr["prediction"])
+        features[f"{alias}_t5npr_raw"] = float(t5_npr["raw"])
 
-            id_npr = await self.detect_identifier_npr(code, language)
-            features[f"{alias}_idnpr_score"] = float(id_npr["score"])
-            features[f"{alias}_idnpr_prediction"] = float(id_npr["prediction"])
-            features[f"{alias}_idnpr_raw"] = float(id_npr["raw"])
+        id_npr = await self.detect_identifier_npr(code, language)
+        features[f"{alias}_idnpr_score"] = float(id_npr["score"])
+        features[f"{alias}_idnpr_prediction"] = float(id_npr["prediction"])
+        features[f"{alias}_idnpr_raw"] = float(id_npr["raw"])
 
         return features
 
@@ -723,13 +722,11 @@ class AICodeDetectionService:
         detectors: Dict[str, DetectorModel],
         classifier: ANNClassifier,
         n_perturbations: int,
-        include_advanced: bool,
     ) -> None:
         self.detector_aliases = detector_aliases
         self.detectors = detectors
         self.classifier = classifier
         self.n_perturbations = n_perturbations
-        self.include_advanced = include_advanced
         self._lock = asyncio.Lock()
 
     @classmethod
@@ -737,7 +734,6 @@ class AICodeDetectionService:
         cls,
         detector_aliases: Optional[List[str]] = None,
         n_perturbations: int = 5,
-        include_advanced: bool = True,
         model_path: Optional[str] = None,
         threshold: Optional[float] = None,
     ) -> "AICodeDetectionService":
@@ -764,19 +760,15 @@ class AICodeDetectionService:
             detectors=detectors,
             classifier=classifier,
             n_perturbations=n_perturbations,
-            include_advanced=include_advanced,
         )
 
-    async def evaluate(self, code: str, language: str, include_advanced: Optional[bool] = None) -> Dict[str, Any]:
-        effective_include_advanced = self.include_advanced if include_advanced is None else include_advanced
-
+    async def evaluate(self, code: str, language: str) -> Dict[str, Any]:
         async with self._lock:
             all_features: Dict[str, float] = {}
             for alias in self.detector_aliases:
                 detector_features = await self.detectors[alias].extract_features(
                     code=code,
                     language=language,
-                    include_advanced=effective_include_advanced,
                 )
                 all_features.update(detector_features)
 
@@ -785,7 +777,6 @@ class AICodeDetectionService:
                 language=language,
                 detectors_used=self.detector_aliases,
             )
-            result["advanced_features_enabled"] = effective_include_advanced
             result["perturbations"] = self.n_perturbations
             result["scoring_backend"] = "vllm_async_engine"
             return result
