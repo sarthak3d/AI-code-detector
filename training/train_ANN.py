@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
-"""
-Train MLP (Multi-Layer Perceptron) with Optuna Hyperparameter Optimization
-==========================================================================
+﻿"""
+Train MLP (Multi-Layer Perceptron) with Optuna Hyperparameter Optimization.
+
 This script trains an MLP neural network for AI code detection using
 Optuna for automated hyperparameter tuning.
 
@@ -67,9 +66,7 @@ except ImportError:
 
 warnings.filterwarnings('ignore')
 
-# ============================================================================
 # Configuration
-# ============================================================================
 OUTPUT_DIR = Path("dl_models")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RANDOM_SEED = 42
@@ -79,9 +76,7 @@ LABEL_SMOOTHING = 0.1  # Default label smoothing value (0.0 = no smoothing)
 torch.manual_seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 
-# ============================================================================
 # MLP Model Definition
-# ============================================================================
 class CodeDetectorMLP(nn.Module):
     """
     Multi-Layer Perceptron for AI Code Detection.
@@ -195,9 +190,7 @@ class CodeDetectorMLP(nn.Module):
             'use_batch_norm': self.use_batch_norm,
         }
 
-# ============================================================================
 # Training Utilities
-# ============================================================================
 class EarlyStopping:
     """Early stopping to stop training when validation loss doesn't improve."""
     
@@ -301,9 +294,7 @@ def evaluate(model, data_loader, criterion, device):
     
     return metrics, all_preds, all_probs, all_labels
 
-# ============================================================================
 # Data Loading and Preprocessing
-# ============================================================================
 def load_and_preprocess_data(feature_paths: list, include_language: bool = True):
     """Load and preprocess feature data."""
     
@@ -393,9 +384,7 @@ def prepare_data_loaders(X, y, batch_size: int = 32, val_size: float = 0.15,
     
     return train_loader, val_loader, test_loader, scaler
 
-# ============================================================================
 # Optuna Hyperparameter Optimization
-# ============================================================================
 def create_objective(X_trainval, y_trainval, input_size, device, 
                      max_epochs=100, patience=10):
     """Create Optuna objective function with k-fold cross-validation."""
@@ -520,10 +509,7 @@ def run_optimization(X, y, feature_names, n_trials=50, timeout=3600, max_epochs=
     
     if not OPTUNA_AVAILABLE:
         raise ImportError("Optuna is required for optimization. Install with: pip install optuna")
-    
-    print("\n" + "=" * 70)
     print("OPTUNA HYPERPARAMETER OPTIMIZATION (with K-Fold CV)")
-    print("=" * 70)
     
     # Split data: trainval vs test (CV is done internally in objective)
     X_trainval, X_test, y_trainval, y_test = train_test_split(
@@ -549,7 +535,6 @@ def run_optimization(X, y, feature_names, n_trials=50, timeout=3600, max_epochs=
     
     print(f"\nRunning optimization with {n_trials} trials (timeout: {timeout}s, max_epochs: {max_epochs})...")
     print(f"Device: {device}")
-    print("-" * 70)
     
     # Run optimization
     study.optimize(
@@ -560,9 +545,7 @@ def run_optimization(X, y, feature_names, n_trials=50, timeout=3600, max_epochs=
     )
     
     # Results
-    print("\n" + "=" * 70)
     print("OPTIMIZATION RESULTS")
-    print("=" * 70)
     
     print(f"\nBest Trial: #{study.best_trial.number}")
     print(f"Best Validation F1: {study.best_value:.4f}")
@@ -571,9 +554,7 @@ def run_optimization(X, y, feature_names, n_trials=50, timeout=3600, max_epochs=
         print(f"  {key}: {value}")
     
     # Train final model with best hyperparameters
-    print("\n" + "=" * 70)
     print("TRAINING FINAL MODEL WITH BEST HYPERPARAMETERS")
-    print("=" * 70)
     
     best_params = study.best_params
     
@@ -635,9 +616,7 @@ def run_optimization(X, y, feature_names, n_trials=50, timeout=3600, max_epochs=
         scheduler.step(train_loss)
     
     # Evaluate on test set
-    print("\n" + "=" * 70)
     print("FINAL TEST RESULTS")
-    print("=" * 70)
     
     test_metrics, test_preds, test_probs, test_labels = evaluate(
         final_model, test_loader, criterion, device
@@ -665,10 +644,7 @@ def train_default_mlp(X, y, feature_names, hidden_sizes=[256, 128, 64],
                       dropout=0.3, lr=0.001, batch_size=32, max_epochs=100,
                       device=DEVICE):
     """Train MLP with default/specified hyperparameters."""
-    
-    print("\n" + "=" * 70)
     print("TRAINING MLP WITH DEFAULT HYPERPARAMETERS")
-    print("=" * 70)
     
     # Prepare data
     train_loader, val_loader, test_loader, scaler = prepare_data_loaders(
@@ -701,7 +677,6 @@ def train_default_mlp(X, y, feature_names, hidden_sizes=[256, 128, 64],
     early_stopping = EarlyStopping(patience=15, mode='max')
     
     print(f"\nTraining on {device}...")
-    print("-" * 50)
     
     history = {'train_loss': [], 'val_loss': [], 'val_f1': []}
     
@@ -734,9 +709,7 @@ def train_default_mlp(X, y, feature_names, hidden_sizes=[256, 128, 64],
     early_stopping.restore_best_weights(model)
     
     # Evaluate on test set
-    print("\n" + "=" * 70)
     print("TEST RESULTS")
-    print("=" * 70)
     
     test_metrics, test_preds, test_probs, test_labels = evaluate(
         model, test_loader, criterion, device
@@ -756,9 +729,7 @@ def train_default_mlp(X, y, feature_names, hidden_sizes=[256, 128, 64],
     
     return model, scaler, feature_names, history, test_metrics, test_loader
 
-# ============================================================================
 # Model Saving and Loading
-# ============================================================================
 def save_model(model, scaler, feature_names, metrics, hyperparams=None, 
                output_path=None, study=None):
     """Save trained model and metadata."""
@@ -823,9 +794,7 @@ def load_model(model_path, device=DEVICE):
     
     return model, model_data['scaler'], model_data['feature_names'], model_data
 
-# ============================================================================
 # Cross-Validation
-# ============================================================================
 def cross_validate_mlp(X, y, feature_names, hyperparams=None, n_folds=5, 
                        max_epochs=100, device=DEVICE, verbose=True):
     """
@@ -844,9 +813,7 @@ def cross_validate_mlp(X, y, feature_names, hyperparams=None, n_folds=5,
     Returns:
         cv_results: Dictionary with per-fold and aggregate metrics
     """
-    print("\n" + "=" * 70)
     print(f"K-FOLD CROSS-VALIDATION (K={n_folds})")
-    print("=" * 70)
     
     # Default hyperparameters
     if hyperparams is None:
@@ -906,7 +873,6 @@ def cross_validate_mlp(X, y, feature_names, hyperparams=None, n_folds=5,
     fold_histories = []
     
     print(f"\nTraining on {device}...")
-    print("-" * 70)
     
     for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
         if verbose:
@@ -998,9 +964,7 @@ def cross_validate_mlp(X, y, feature_names, hyperparams=None, n_folds=5,
                   f"ROC-AUC: {final_metrics['roc_auc']:.4f}")
     
     # Calculate aggregate statistics
-    print("\n" + "=" * 70)
     print("CROSS-VALIDATION RESULTS")
-    print("=" * 70)
     
     cv_results = {
         'n_folds': n_folds,
@@ -1015,7 +979,6 @@ def cross_validate_mlp(X, y, feature_names, hyperparams=None, n_folds=5,
     }
     
     print(f"\n{'Metric':<12} {'Mean':>10} {'Std':>10} {'Min':>10} {'Max':>10}")
-    print("-" * 54)
     
     for metric in fold_metrics:
         values = np.array(fold_metrics[metric])
@@ -1154,34 +1117,28 @@ def save_cv_results(cv_results, output_dir):
     # Save detailed report
     report_path = output_dir / 'cv_report.txt'
     with open(report_path, 'w') as f:
-        f.write("=" * 60 + "\n")
         f.write("CROSS-VALIDATION REPORT\n")
-        f.write("=" * 60 + "\n\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Number of Folds: {cv_results['n_folds']}\n\n")
         
         f.write("AGGREGATE METRICS (Mean ± Std)\n")
-        f.write("-" * 40 + "\n")
         for metric in cv_results['mean']:
             mean = cv_results['mean'][metric]
             std = cv_results['std'][metric]
             f.write(f"  {metric.upper():<12}: {mean:.4f} ± {std:.4f}\n")
         
         f.write("\n\nPER-FOLD METRICS\n")
-        f.write("-" * 40 + "\n")
         for fold in range(cv_results['n_folds']):
             f.write(f"\nFold {fold + 1}:\n")
             for metric in cv_results['per_fold']:
                 f.write(f"  {metric.upper():<12}: {cv_results['per_fold'][metric][fold]:.4f}\n")
         
         f.write("\n\nCONFUSION MATRIX (Aggregated)\n")
-        f.write("-" * 40 + "\n")
         cm = cv_results['confusion_matrix']
         f.write(f"  [[TN={cm[0,0]}, FP={cm[0,1]}],\n")
         f.write(f"   [FN={cm[1,0]}, TP={cm[1,1]}]]\n")
         
         f.write("\n\nCLASSIFICATION REPORT (Aggregated)\n")
-        f.write("-" * 40 + "\n")
         f.write(classification_report(
             cv_results['all_labels'], 
             cv_results['all_predictions'],
@@ -1194,9 +1151,7 @@ def save_cv_results(cv_results, output_dir):
     return json_path, report_path
 
 
-# ============================================================================
 # Visualization
-# ============================================================================
 def plot_optimization_history(study, save_path=None):
     """Plot Optuna optimization history."""
     
@@ -1317,9 +1272,7 @@ def plot_training_validation_loss(history, save_path=None, title="Training and V
     print(f"Total Epochs: {len(epochs)}")
 
 
-# ============================================================================
 # Evaluation Visualizations
-# ============================================================================
 def plot_confusion_matrix(y_true, y_pred, save_path=None, title="Confusion Matrix"):
     """Plot and save confusion matrix."""
     if not PLOTTING_AVAILABLE:
@@ -1473,10 +1426,7 @@ def plot_metrics_summary(metrics, save_path=None, title="Model Performance Metri
 
 def run_evaluation(model, test_loader, criterion, device, output_dir, model_name="MLP"):
     """Run full evaluation and generate all visualizations."""
-    
-    print("\n" + "=" * 70)
     print("GENERATING EVALUATION VISUALIZATIONS")
-    print("=" * 70)
     
     # Get all predictions
     model.eval()
@@ -1543,9 +1493,7 @@ def run_evaluation(model, test_loader, criterion, device, output_dir, model_name
     report = classification_report(y_true, y_pred, target_names=['Human', 'AI'], digits=4)
     report_path = output_dir / 'classification_report.txt'
     with open(report_path, 'w') as f:
-        f.write("=" * 60 + "\n")
         f.write(f"CLASSIFICATION REPORT - {model_name}\n")
-        f.write("=" * 60 + "\n\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write(report)
         f.write("\n\nConfusion Matrix:\n")
@@ -1572,9 +1520,7 @@ def run_evaluation(model, test_loader, criterion, device, output_dir, model_name
     return metrics, cm, report
 
 
-# ============================================================================
 # Main
-# ============================================================================
 def main():
     parser = argparse.ArgumentParser(
         description='Train MLP with Optuna Hyperparameter Optimization'
@@ -1636,9 +1582,7 @@ def main():
     print(f"Label smoothing: {LABEL_SMOOTHING}")
     
     # Load data
-    print("\n" + "=" * 70)
     print("LOADING DATA")
-    print("=" * 70)
     
     X, y, feature_names = load_and_preprocess_data(
         [args.features], 
@@ -1702,10 +1646,7 @@ def main():
         if history:
             loss_plot_path = eval_dir / 'training_validation_loss.png'
             plot_training_validation_loss(history, save_path=loss_plot_path)
-    
-    print("\n" + "=" * 70)
     print("TRAINING COMPLETE")
-    print("=" * 70)
     print(f"\nFinal Test F1: {metrics['f1']:.4f}")
     print(f"Model saved to: {output_path}")
     if PLOTTING_AVAILABLE:
@@ -1713,9 +1654,7 @@ def main():
     
     # Run cross-validation if requested
     if args.cv:
-        print("\n" + "=" * 70)
         print("RUNNING CROSS-VALIDATION FOR ROBUST EVALUATION")
-        print("=" * 70)
         
         # Use best hyperparameters found (or default)
         cv_results = cross_validate_mlp(
@@ -1734,10 +1673,7 @@ def main():
         # Plot CV results
         if PLOTTING_AVAILABLE:
             plot_cv_results(cv_results, save_dir=cv_output_dir)
-        
-        print("\n" + "=" * 70)
         print("CROSS-VALIDATION SUMMARY")
-        print("=" * 70)
         print(f"\nMean F1 Score: {cv_results['mean']['f1']:.4f} ± {cv_results['std']['f1']:.4f}")
         print(f"Mean Accuracy: {cv_results['mean']['accuracy']:.4f} ± {cv_results['std']['accuracy']:.4f}")
         print(f"Mean ROC-AUC:  {cv_results['mean']['roc_auc']:.4f} ± {cv_results['std']['roc_auc']:.4f}")

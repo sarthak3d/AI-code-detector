@@ -1,6 +1,6 @@
 """
-Update (Incrementally Expand) an Existing MLP Model with New LLM Features
-==========================================================================
+Update (Incrementally Expand) an Existing MLP Model with New LLM Features.
+
 When a new AI model is released, the workflow is:
   1. Generate AI code with the new model         (generate.py / generate_api.py)
   2. Extract features using the new model         (generate_features.py)
@@ -714,9 +714,7 @@ Examples:
     print(f"Using device: {device}")
 
     # Step 1: Load existing model
-    print("\n" + "=" * 70)
     print("STEP 1: LOADING EXISTING MODEL")
-    print("=" * 70)
 
     old_model, old_config, old_features, old_scaler, old_model_data = load_existing_model(
         args.model, device,
@@ -729,9 +727,7 @@ Examples:
     print(f"  Old metrics:   {old_model_data.get('metrics', 'N/A')}")
 
     # Step 2: Load new feature data
-    print("\n" + "=" * 70)
     print("STEP 2: LOADING NEW FEATURE DATA")
-    print("=" * 70)
 
     X, y, new_features = load_and_preprocess_data(
         [args.features], include_language=not args.no_language,
@@ -741,9 +737,7 @@ Examples:
     print(f"  Labels: Human={np.sum(y == 0)}, AI={np.sum(y == 1)}")
 
     # Step 3: Analyze feature changes
-    print("\n" + "=" * 70)
     print("STEP 3: ANALYZING FEATURE CHANGES")
-    print("=" * 70)
 
     mapping = compute_feature_mapping(old_features, new_features)
 
@@ -754,9 +748,7 @@ Examples:
         print("  Proceeding with fine-tuning on the new data anyway...\n")
 
     # Step 4: Expand model
-    print("\n" + "=" * 70)
     print("STEP 4: EXPANDING MODEL")
-    print("=" * 70)
 
     expanded_model = expand_model(
         old_model, old_features, new_features, device,
@@ -767,9 +759,7 @@ Examples:
     print(f"\n  Total parameters: {total_params:,}")
 
     # Step 5: Fine-tune
-    print("\n" + "=" * 70)
     print("STEP 5: FINE-TUNING EXPANDED MODEL")
-    print("=" * 70)
 
     updated_model, new_scaler, test_metrics, optimal_threshold, history, test_loader = fine_tune_model(
         model=expanded_model,
@@ -786,9 +776,7 @@ Examples:
     )
 
     # Step 6: Save updated model
-    print("\n" + "=" * 70)
     print("STEP 6: SAVING UPDATED MODEL")
-    print("=" * 70)
 
     update_info = {
         "base_model_path": str(args.model),
@@ -820,10 +808,7 @@ Examples:
 
     # Compare old vs new
     old_metrics = old_model_data.get("metrics", {})
-
-    print("\n" + "=" * 70)
     print("UPDATE COMPLETE -- COMPARISON")
-    print("=" * 70)
 
     header = f"{'Metric':<12} {'Old':>10} {'New':>10} {'Delta':>10}"
     print(f"\n  {header}")
@@ -842,16 +827,12 @@ Examples:
 
     print(f"\n  Input size: {old_config['input_size']} -> {len(new_features)}")
     print(f"  Model saved to: {output_path}")
-
-    print("\n" + "=" * 70)
     print("NEXT STEPS")
-    print("=" * 70)
     print("  1. Copy the updated model to app/model/:")
     print(f"     cp {output_path} app/model/")
     print(f"     cp {output_path.with_name('metrics.json')} app/model/")
     print("  2. Update app/api/service.py FEATURE_MODELS if new scoring models added")
     print("  3. Rebuild Docker image if applicable")
-    print("=" * 70)
 
 
 if __name__ == "__main__":

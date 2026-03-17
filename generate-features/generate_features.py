@@ -1,4 +1,4 @@
-"""
+﻿"""
 Generate Feature Dataset for ML Meta-Classifier
 ================================================
 This script generates method×model score features using detect_full.py
@@ -39,13 +39,9 @@ import gc
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# ============================================================================
 # Extended Model Registry (15+ Models)
-# ============================================================================
 EXTENDED_MODELS = {
-    # =========================================================================
     # SMALL MODELS (< 2GB VRAM) - Run on single GPU easily
-    # =========================================================================
     "codegen-350m-multi": {
         "name": "Salesforce/codegen-350M-multi",
         "description": "CodeGen 350M multi-language",
@@ -55,9 +51,7 @@ EXTENDED_MODELS = {
         "has_safetensors": False  # Uses pytorch_model.bin
     },
     
-    # =========================================================================
     # MEDIUM MODELS (2-8GB VRAM)
-    # =========================================================================
     "codegen-2b-multi": {
         "name": "Salesforce/codegen-2B-multi",
         "description": "CodeGen 2B multi-language",
@@ -94,9 +88,7 @@ EXTENDED_MODELS = {
         "category": "medium"
     },
     
-    # =========================================================================
     # LARGE MODELS (8-16GB VRAM)
-    # =========================================================================
     "codegen-6b-multi": {
         "name": "Salesforce/codegen-6B-multi",
         "description": "CodeGen 6B multi-language",
@@ -140,9 +132,7 @@ EXTENDED_MODELS = {
         "category": "large"
     },
     
-    # =========================================================================
     # XLARGE MODELS (16-32GB VRAM) - Need 8-bit quantization
-    # =========================================================================
     "codellama-13b": {
         "name": "codellama/CodeLlama-13b-hf",
         "description": "Meta CodeLlama 13B",
@@ -179,9 +169,7 @@ EXTENDED_MODELS = {
         "category": "xlarge"
     },
     
-    # =========================================================================
     # XXLARGE MODELS (>32GB VRAM) - Need 4-bit quantization for V100
-    # =========================================================================
     "codellama-34b": {
         "name": "codellama/CodeLlama-34b-Instruct-hf",
         "description": "Meta CodeLlama 34B Instruct",
@@ -217,9 +205,7 @@ MODEL_CATEGORIES = {
     "fast": ["codegen-350m-multi", "starcoder2-3b", "deepseek-1.3b"],
 }
 
-# ============================================================================
 # Configuration
-# ============================================================================
 DATASET_AI_PATH = Path("dataset_ai")
 DATASET_HUMAN_PATH = Path("dataset_human")
 OUTPUT_DIR = Path("features")
@@ -230,9 +216,7 @@ METHODS = ['npr', 'lrr', 'logrank', 'entropy', 'likelihood', 'detectgpt', 't5npr
 # Language encoding for ML
 LANGUAGE_ENCODING = {lang: idx for idx, lang in enumerate(LANGUAGES)}
 
-# ============================================================================
 # Model Loading with Quantization
-# ============================================================================
 def load_model_with_quantization(model_name: str, quantization: str = None, device: str = "cuda", use_safetensors: bool = True):
     """Load model with optional quantization for large models.
     
@@ -288,9 +272,7 @@ def load_model_with_quantization(model_name: str, quantization: str = None, devi
     
     return model, tokenizer
 
-# ============================================================================
 # Custom Detector for Extended Models
-# ============================================================================
 class ExtendedDetector:
     """Detector that supports quantized models."""
     
@@ -711,9 +693,7 @@ class ExtendedDetector:
         gc.collect()
         torch.cuda.empty_cache()
 
-# ============================================================================
 # Data Loading Functions
-# ============================================================================
 def load_ai_samples(language: str, n_samples: int = 500) -> list:
     """Load AI-generated code samples for a language."""
     samples = []
@@ -792,7 +772,6 @@ def load_balanced_dataset(samples_per_language: int = 500, languages: list = Non
     all_samples = []
     
     print(f"\nLoading balanced dataset ({samples_per_language} samples per class per language)...")
-    print("=" * 60)
     
     for lang in languages:
         print(f"\n{lang}:")
@@ -815,9 +794,7 @@ def load_balanced_dataset(samples_per_language: int = 500, languages: list = Non
     
     return all_samples
 
-# ============================================================================
 # Feature Generation
-# ============================================================================
 def extract_features_extended(detector: ExtendedDetector, code: str, model_alias: str, 
                                language: str = 'python') -> dict:
     """Extract all method scores for a single code sample.
@@ -986,26 +963,18 @@ def generate_feature_dataset(samples: list, model_aliases: list,
     
     return pd.DataFrame(all_features)
 
-# ============================================================================
 # Main
-# ============================================================================
 def list_available_models():
     """Print all available models."""
-    print("\n" + "=" * 80)
     print("AVAILABLE MODELS")
-    print("=" * 80)
     
     for category in ["small", "medium", "large", "xlarge", "xxlarge"]:
         print(f"\n{category.upper()} MODELS:")
-        print("-" * 60)
         for alias, info in EXTENDED_MODELS.items():
             if info["category"] == category:
                 quant = f" ({info['quantization']})" if info.get('quantization') else ""
                 print(f"  {alias:<25} {info['vram']:<20} {quant}")
-    
-    print("\n" + "=" * 80)
     print("MODEL GROUPS:")
-    print("-" * 60)
     for group, models in MODEL_CATEGORIES.items():
         print(f"  {group}: {', '.join(models)}")
 
@@ -1070,10 +1039,7 @@ def main():
         n_langs = len(languages)
         total_samples = args.samples * 2 * n_langs
         output_path = OUTPUT_DIR / f"features_{total_samples}samples_{n_models}models_{timestamp}.csv"
-    
-    print("\n" + "=" * 70)
     print("FEATURE GENERATION FOR ML META-CLASSIFIER")
-    print("=" * 70)
     print(f"\nConfiguration:")
     print(f"  Samples per class per language: {args.samples}")
     print(f"  Languages: {languages}")
@@ -1100,9 +1066,7 @@ def main():
     random.shuffle(samples)
     
     # Generate features
-    print("\n" + "=" * 70)
     print("GENERATING FEATURES")
-    print("=" * 70)
     
     df = generate_feature_dataset(
         samples, 
@@ -1116,9 +1080,7 @@ def main():
     print(f"\n✓ Features saved to: {output_path}")
     
     # Print summary
-    print("\n" + "=" * 70)
     print("DATASET SUMMARY")
-    print("=" * 70)
     print(f"Total samples: {len(df)}")
     print(f"Features per sample: {len(df.columns) - 5}")  # Exclude metadata columns
     print(f"AI samples: {(df['label'] == 1).sum()}")

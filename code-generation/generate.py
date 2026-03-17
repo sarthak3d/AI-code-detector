@@ -1,4 +1,4 @@
-import time
+﻿import time
 import openai
 import numpy as np
 import re
@@ -493,11 +493,8 @@ def generate_for_language(model, tokenizer, model_device, path, language, model_
     
     with open(file_name_v2, 'a', encoding='utf-8') as f:
         for i in range(len(outputs)):
-            f.write("-"*20 + '\n')
             f.write(f'Prompt: \n{prompts[i]}\n')
-            f.write("-"*10 + '\n')
             f.write(f'Output: \n{outputs[i]}\n')
-            f.write("-"*10 + '\n')
             f.write(f'Solution: \n{solutions[i]}\n')
     
     return {

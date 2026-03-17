@@ -1,6 +1,6 @@
 """
-Generate AI Code Dataset from API-based LLM Providers
-=====================================================
+Generate AI Code Dataset from API-based LLM Providers.
+
 Generates AI-written code from private/proprietary LLM APIs using human-written
 prompts as input. Produces output in the same JSONL format as generate.py so
 the downstream feature-extraction and training pipeline works unchanged.
@@ -488,11 +488,8 @@ def generate_for_language(
     outputs_v2_file = output_dir / "outputs_v2.txt"
     with open(outputs_v2_file, "w", encoding="utf-8") as f:
         for prompt, output, solution in valid_outputs:
-            f.write("-" * 20 + "\n")
             f.write(f"Prompt: \n{prompt}\n")
-            f.write("-" * 10 + "\n")
             f.write(f"Output: \n{output}\n")
-            f.write("-" * 10 + "\n")
             f.write(f"Solution: \n{solution}\n")
 
     return {
@@ -505,9 +502,7 @@ def generate_for_language(
 
 def list_providers():
     """Print all supported providers and their details."""
-    print("\n" + "=" * 70)
     print("SUPPORTED API PROVIDERS")
-    print("=" * 70)
     for name, info in PROVIDER_REGISTRY.items():
         print(f"\n  {name}")
         print(f"    Description:   {info['description']}")
@@ -598,10 +593,7 @@ Examples:
     if not languages:
         logger.error("No valid languages specified")
         sys.exit(1)
-
-    print("\n" + "=" * 70)
     print("AI CODE GENERATION VIA API")
-    print("=" * 70)
     print(f"  Provider:     {args.provider}")
     print(f"  Model:        {model}")
     print(f"  Languages:    {languages}")
@@ -610,7 +602,6 @@ Examples:
     print(f"  Max tokens:   {args.max_tokens}")
     print(f"  Concurrency:  {args.concurrency}")
     print(f"  Output dir:   {args.output_dir}")
-    print("=" * 70)
 
     provider = create_provider(
         provider_name=args.provider,
@@ -638,10 +629,7 @@ Examples:
         except Exception as e:
             logger.error("Error processing %s: %s", language, e)
             continue
-
-    print("\n" + "=" * 70)
     print("GENERATION SUMMARY")
-    print("=" * 70)
 
     total_samples = 0
     total_failed = 0
@@ -652,11 +640,8 @@ Examples:
         )
         total_samples += result["count"]
         total_failed += result["failed"]
-
-    print("-" * 70)
     print(f"  Total: {total_samples} samples across {len(results_summary)} languages ({total_failed} failed)")
     print(f"  Provider: {provider.provider_name} | Model: {model}")
-    print("=" * 70)
 
     manifest = {
         "timestamp": datetime.now().isoformat(),
