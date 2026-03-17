@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Generate Feature Dataset for ML Meta-Classifier
 ================================================
